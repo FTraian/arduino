@@ -13,31 +13,29 @@ int buttonPins[3] = {3, 4, 5};
 
 DHT dht(DHTPIN, DHTTYPE);
 
-#define FILTER_DEPTH 256
-static float buffer[FILTER_DEPTH];
-static int oldest = 0;
-static float sum;
-    
+#define MAX_FILTER_DEPTH 256
+float sum;
+
 unsigned long timeStart = 0;
 
 void setup()
 {
   /* Set up the button pins as inputs, set pull-up resistor */
-  for (int i=0; i<3; i++)
+  for (int i = 0; i < 3; i++)
   {
     pinMode(buttonPins[i], INPUT);
     digitalWrite(buttonPins[i], HIGH);
   }
-  
+
   /* Initialize the LCD, set the contrast, clear the screen */
   lcd.init(EPSON);
   lcd.contrast(40);
   lcd.clear(BACKGROUND);
-  
+
   Serial.begin(9600);
   Serial.println(F("DHTxx test!"));
   dht.begin();
-  
+
   timeStart = millis();
 }
 
@@ -48,7 +46,7 @@ void loop()
   float h = dht.readHumidity();
   // Read temperature as Celsius (the default)
   float t = dht.readTemperature();
-  
+
   // Check if any reads failed and exit early (to try again).
   if (isnan(h) || isnan(t)) {
     Serial.println(F("Failed to read from DHT sensor!"));
@@ -66,40 +64,35 @@ void loop()
   Serial.print(F(" Heat index: "));
   Serial.print(hic);
   Serial.print(F("°C\n"));
-  
+
   drawData(0, t, h, hic);
   drawData(1, filter(t), h, hic);
-  
+
   delay(100);
 }
 
-float filter(float sample){
-    sum -= buffer[oldest];
-    sum += sample;
-    buffer[oldest] = sample;
-    oldest += 1;
-    if (oldest >= FILTER_DEPTH) {
-      oldest = 0;
-    }
+float filter(float sample) {
+  sum -= sum / MAX_FILTER_DEPTH;
+  sum += sample;
 
-    return sum / FILTER_DEPTH;
+  return sum / MAX_FILTER_DEPTH;
 }
 
 void drawData(int row, float temp, float hum, float tempIdx) {
   char lcdStr[20];
   char str[5];
-  
+
   dtostrf(temp, 4, 1, str);
   strcpy(lcdStr, str);
   strcat(lcdStr, "C ");
-  
+
   dtostrf(hum, 2, 0, str);
   strcat(lcdStr, str);
   strcat(lcdStr, "% ");
-  
+
   dtostrf(tempIdx, 4, 1, str);
   strcat(lcdStr, str);
   strcat(lcdStr, "R");
-  
+
   lcd.setStr(lcdStr, row * 13, 4, WHITE, BACKGROUND);
 }
