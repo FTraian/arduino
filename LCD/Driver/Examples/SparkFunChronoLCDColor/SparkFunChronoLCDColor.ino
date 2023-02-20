@@ -62,7 +62,7 @@ void setup()
   ampm = AMPM;
   
   /* Initialize the LCD, set the contrast, clear the screen */
-  lcd.init(PHILIPS);
+  lcd.init(EPSON);
   lcd.contrast(-63);
   lcd.clear(BACKGROUND);
   
